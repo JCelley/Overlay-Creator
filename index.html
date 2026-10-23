@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparator Overlay | American Precision Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/app.css" />
+  <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="https://jcelley.github.io/American-Precision-Works/"><img src="https://jcelley.github.io/American-Precision-Works/apw-logo-stacked%E2%80%93blue.png" alt="APW Logo" /></a>
+    <div class="header-divider"></div>
+    <div>
+      <div class="header-title">Comparator Overlay</div>
+      <div class="header-sub">True-scale optical comparator overlays · Phase 1</div>
+    </div>
+    <div class="header-actions">
+      <label class="inline">Units
+        <select id="units" class="field-input small">
+          <option value="in">inch</option>
+          <option value="mm">mm</option>
+        </select>
+      </label>
+      <button id="btnExport" class="btn primary" disabled>Export overlay PDF</button>
+    </div>
+  </header>
+
+  <div class="print-banner">PRINT THE PDF AT <b>100% / ACTUAL SIZE</b> — turn OFF "Fit to page", "Shrink oversized pages" and any scaling. The browser print dialog is never used for scale.</div>
+
+  <main class="main">
+    <!-- LEFT: job inputs -->
+    <aside class="panel left">
+      <section>
+        <h2 class="panel-title">Geometry</h2>
+        <label id="drop" class="drop">
+          <input type="file" id="file" accept=".dxf" hidden />
+          <span id="dropText">Drop a DXF here or click to choose</span>
+        </label>
+        <div class="field-group">
+          <span class="field-label">If the DXF has no units, assume</span>
+          <select id="fallbackUnit" class="field-input">
+            <option value="in">Inches</option>
+            <option value="mm">Millimeters</option>
+          </select>
+        </div>
+        <div id="geoInfo" class="readout"></div>
+        <div id="layers" class="checklist"></div>
+        <div id="openList" class="checklist"></div>
+      </section>
+
+      <section>
+        <h2 class="panel-title">Magnification</h2>
+        <div class="row">
+          <input id="mag" type="number" min="0.1" step="any" class="field-input" />
+          <span class="suffix">×</span>
+        </div>
+        <div class="chips" id="magChips">
+          <button data-mag="10">10×</button><button data-mag="20">20×</button><button data-mag="25">25×</button><button data-mag="50">50×</button><button data-mag="100">100×</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="panel-title">Tolerance</h2>
+        <div class="field-group">
+          <span class="field-label">Type</span>
+          <select id="tolType" class="field-input"></select>
+        </div>
+        <div class="field-group" id="grpMode">
+          <span class="field-label">Value entered as</span>
+          <div class="seg">
+            <label><input type="radio" name="tolMode" value="plusminus" /> ± each side</label>
+            <label><input type="radio" name="tolMode" value="total" /> Total zone</label>
+          </div>
+        </div>
+        <div class="field-group" id="grpValue">
+          <span class="field-label" id="lblValue">Tolerance</span>
+          <div class="row"><input id="tolValue" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div>
+        </div>
+        <div class="row2" id="grpUnequal">
+          <div class="field-group"><span class="field-label">Plus (outside) +a</span><div class="row"><input id="tolPlus" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+          <div class="field-group"><span class="field-label">Minus (inside) −b</span><div class="row"><input id="tolMinus" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+        </div>
+        <p id="tolNote" class="note"></p>
+      </section>
+
+      <section>
+        <h2 class="panel-title">Line Styles</h2>
+        <div class="field-group">
+          <span class="field-label">Limit lines (solid) — printed width</span>
+          <select id="limitW" class="field-input"></select>
+        </div>
+        <p id="limitNote" class="note"></p>
+        <label class="check"><input type="checkbox" id="showNominal" /> Show nominal profile (dashed)</label>
+        <div class="field-group">
+          <span class="field-label">Nominal line — printed width</span>
+          <select id="nominalW" class="field-input"></select>
+        </div>
+        <div class="row2">
+          <div class="field-group"><span class="field-label">Dash</span><div class="row"><input id="dashOn" type="number" min="0.001" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+          <div class="field-group"><span class="field-label">Gap</span><div class="row"><input id="dashOff" type="number" min="0.001" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="panel-title">Output</h2>
+        <div class="field-group">
+          <span class="field-label">Paper</span>
+          <select id="paper" class="field-input"></select>
+        </div>
+        <div class="row2">
+          <div class="field-group">
+            <span class="field-label">Orientation</span>
+            <select id="orientation" class="field-input">
+              <option value="auto">Auto</option>
+              <option value="portrait">Portrait</option>
+              <option value="landscape">Landscape</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <span class="field-label">Margin</span>
+            <div class="row"><input id="margin" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- CENTER: preview -->
+    <section class="center">
+      <div class="preview-bar">
+        <span id="sheetInfo"></span>
+        <span class="legend"><i class="lg outer"></i>Outer limit <i class="lg inner"></i>Inner limit <i class="lg nominal"></i>Nominal <span class="muted">(all print black)</span></span>
+        <button id="btnFit" class="btn ghost small">Fit</button>
+      </div>
+      <svg id="preview" class="preview"></svg>
+      <div id="warnings" class="warnings"></div>
+    </section>
+
+    <!-- RIGHT: calibration -->
+    <aside class="panel right">
+      <section>
+        <h2 class="panel-title">Calibration</h2>
+        <div class="field-group">
+          <span class="field-label">Printer profile</span>
+          <select id="printer" class="field-input"></select>
+        </div>
+        <div class="chips">
+          <button id="btnNewPrinter">New</button><button id="btnRenamePrinter">Rename</button><button id="btnDeletePrinter">Delete</button>
+        </div>
+        <div id="corrInfo" class="readout"></div>
+      </section>
+
+      <section>
+        <h3 class="sub-title">Calibration box</h3>
+        <div class="seg col">
+          <label><input type="radio" name="calMode" value="part" /> Size at <b>part scale</b> (drawn × magnification)</label>
+          <label><input type="radio" name="calMode" value="fixed" /> Fixed <b>printed</b> size (independent of magnification)</label>
+        </div>
+        <div class="field-group">
+          <span class="field-label" id="lblCalSize">Nominal box size</span>
+          <div class="row"><input id="calSize" type="number" min="0.01" step="any" class="field-input" /><span class="suffix u"></span></div>
+        </div>
+        <div id="calExpected" class="readout"></div>
+        <button id="btnCalSheet" class="btn ghost">Download calibration sheet PDF</button>
+      </section>
+
+      <section>
+        <h3 class="sub-title">Measure &amp; enter</h3>
+        <p class="note">Measure the printed box across its OUTSIDE edges with calipers. X = across the sheet, Y = along the paper feed.</p>
+        <div class="row2">
+          <div class="field-group"><span class="field-label">Measured X</span><div class="row"><input id="measX" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+          <div class="field-group"><span class="field-label">Measured Y</span><div class="row"><input id="measY" type="number" min="0" step="any" class="field-input" /><span class="suffix u"></span></div></div>
+        </div>
+        <div class="chips wide">
+          <button id="btnVerify">Verify only</button>
+          <button id="btnApplyCal" class="accent">Apply correction</button>
+        </div>
+        <div id="calResult" class="readout"></div>
+        <details class="history"><summary>Calibration history</summary><div id="calHistory"></div></details>
+      </section>
+
+      <section>
+        <h3 class="sub-title">Settings backup</h3>
+        <p class="note">Settings and printer profiles live in this browser. Export them so they survive a browser reset.</p>
+        <div class="chips wide">
+          <button id="btnExportJson">Export JSON</button>
+          <label class="btnlike">Import JSON<input type="file" id="importJson" accept=".json,application/json" hidden /></label>
+        </div>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>
